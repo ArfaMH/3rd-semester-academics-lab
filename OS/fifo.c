@@ -1,38 +1,37 @@
 #include<stdio.h>
-int fr[3];
-void main(){
-	void display();
-	int i,j,page[12]={2,3,2,1,5,2,4,5,3,2,5,2};
-	int flag1=0,flag2=0,pf=0,frsize=3,top=0;
-	for(i=0;i<3;i++){
-		fr[i]=-1;
-	}
-	for(j=0;j<12;j++){
-		flag1=0; flag2=0;
-		for(i=0;i<12;i++){
-			if(fr[i]==page[j]){
-				flag1=1; flag2=1;break;}}
-		if(flag1==0){
-			for(i=0;i<frsize;i++){
-				if(fr[i]==-1)
-				{
-					fr[i]=page[j];flag2=1;
-					break;}}}
-		if(flag2==0){
-			fr[top]=page[j];
-			top++;
-			pf++;
-			if(top>=frsize)
-				top=0;
-		}
-		display();
-	}
-	printf("Number of page faults:%d",pf+frsize);
-}
-void display()
+#include<stdlib.h>
+#include<fcntl.h>
+#include<sys/types.h>
+#include<sys/stat.h>
+#include<unistd.h>
+#define FIFO_FILE "myfifo"
+int main()
 {
-	int i;
-	printf("\n");
-	for(i=0;i<3;i++)
-		printf("%d\t",fr[i]);
+	mkfifo(FIFO_FILE, S_IRUSR | S_IWUSR);
+	if(fork()==0)
+	{
+		int fd = open(FIFO_FILE, O_WRONLY);
+		if(fd==-1){
+			perror("open");
+			exit(EXIT_FAILURE);
+		}
+		char message[]="hello from the writer process!";
+		write(fd, message, sizeof(message));
+		close(fd);
+		exit(EXIT_SUCCESS);
+	}
+	else{
+		int fd= open(FIFO_FILE, O_RDONLY);
+		if(fd == -1){
+			perror("open");
+			exit(EXIT_FAILURE);
+		}
+		char buffer [100];
+		read (fd, buffer, sizeof(buffer));
+		printf("Reader process: Recieved message-%s \n", buffer);
+		close(fd);
+		unlink(FIFO_FILE);
+		exit(EXIT_SUCCESS);
+	}
+	return 0;
 }
